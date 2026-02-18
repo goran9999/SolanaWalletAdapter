@@ -1,14 +1,15 @@
 [package]
 name = "{{project-name}}"
-version = "1.1.0"
+version = "2.0.0"
 authors = ["{{authors}}"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 publish = false
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dioxus = { version = "0.6.2", features = ["router"] }
+dioxus = { version = "0.7.1", features = ["router"] }
 
 wallet-adapter = "1.2.2"
 solana-sdk = "2.1.2"
@@ -20,9 +21,10 @@ gloo-timers = "0.3.0"
 solana-transaction-error = { version = "2.1.13", features = ["serde"] }
 qrcodegen = "1.8.0"
 percent-encoding = "2.3.1"
-fastrand = "2.3.0"
 
 
 [features]
 default = ["web"]
 web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]
