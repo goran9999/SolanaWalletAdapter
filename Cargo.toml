@@ -16,6 +16,7 @@ edition = "2021"
 rust-version = "1.84"
 
 [workspace.dependencies]
+wallet-adapter-common = { path = "./wallet-adapter-common", version = "1.4.2" }
 base64ct = { version = "1.8.0", features = ["alloc"] }
 blake3 = { version = "1.8", default-features = false }
 ed25519-dalek = { version = "2.2.0", default-features = false, features = [
