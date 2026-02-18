@@ -40,22 +40,21 @@ pub fn SignTx() -> Element {
                             let cluster = CLUSTER_STORAGE.read().active_cluster().cluster();
 
                             match WALLET_ADAPTER.read().sign_transaction(&tx_bytes, Some(cluster)).await{
-                                Err(error) => GLOBAL_MESSAGE.write().push_back(
-                                        NotificationInfo::error(
+                                Err(error) => {
+                                    let notification = NotificationInfo::error(
                                             format!("SIGN MESSAGE ERROR: {error:?}")
-                                        )
-                                    ),
+                                        );
+                                GLOBAL_MESSAGE.write().entry(*notification.key()).or_insert(notification);
+                                },
                                 Ok(output) => {
                                     if let Err(error) = bincode::deserialize::<Transaction>(&output[0]){
-                                        GLOBAL_MESSAGE.write().push_back(
-                                            NotificationInfo::error(
+                                        let notification =  NotificationInfo::error(
                                                 format!("SIGN TX ERROR: {error:?}")
-                                            )
-                                        );
+                                            );
+                                        GLOBAL_MESSAGE.write().entry(*notification.key()).or_insert(notification);
                                     }else {
-                                        GLOBAL_MESSAGE.write().push_back(
-                                            NotificationInfo::new("Sign Transaction Successful")
-                                        );
+                                        let notification = NotificationInfo::new("Sign Transaction Successful");
+                                        GLOBAL_MESSAGE.write().entry(*notification.key()).or_insert(notification);
                                     }
                                 }
                             }
