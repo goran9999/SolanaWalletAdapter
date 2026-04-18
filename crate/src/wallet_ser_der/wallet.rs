@@ -73,6 +73,20 @@ impl Wallet {
             .await
     }
 
+    /// Sign multiple transactions in a single wallet popup.
+    /// Uses the Wallet Standard's signTransaction with spread inputs.
+    pub async fn sign_all_transactions(
+        &self,
+        transactions: &[&[u8]],
+        cluster: Option<Cluster>,
+        account: &WalletAccount,
+    ) -> WalletResult<Vec<Vec<u8>>> {
+        self.features
+            .sign_tx
+            .call_sign_all_txs(account, transactions, cluster)
+            .await
+    }
+
     /// Send a sign and send transaction request to the browser wallet.
     pub async fn sign_and_send_transaction(
         &self,

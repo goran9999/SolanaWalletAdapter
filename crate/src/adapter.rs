@@ -378,6 +378,25 @@ impl WalletAdapter {
             .await
     }
 
+    /// Sign multiple transactions in a single wallet popup.
+    pub async fn sign_all_transactions(
+        &self,
+        transactions: &[&[u8]],
+        cluster: Option<Cluster>,
+    ) -> WalletResult<Vec<Vec<u8>>> {
+        let connection_info = self.connection_info();
+
+        connection_info
+            .await
+            .connected_wallet()?
+            .sign_all_transactions(
+                transactions,
+                cluster,
+                self.connection_info().await.connected_account()?,
+            )
+            .await
+    }
+
     /// Send a sign message request to the browser wallet
     pub async fn sign_message<'a>(
         &self,

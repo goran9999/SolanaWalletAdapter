@@ -2,7 +2,7 @@ use ed25519_dalek::Signature;
 use wallet_adapter_common::{clusters::Cluster, WalletCommonUtils};
 use web_sys::{
     js_sys::{self, Function},
-    wasm_bindgen::JsValue,
+    wasm_bindgen::{JsCast, JsValue},
 };
 
 use core::hash::Hash;
@@ -10,7 +10,7 @@ use core::hash::Hash;
 use crate::{Commitment, Reflection, SemverVersion, WalletAccount, WalletError, WalletResult};
 
 /// Used in `solana:SignTransaction` and `solana:SignAndSendTransaction`.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SignTransaction {
     /// The [semver version](SemverVersion) of the
     /// callback function supported by the wallet
@@ -23,6 +23,17 @@ pub struct SignTransaction {
     // Internally called. Can be either `solana:signTransaction`
     // or `solana:signAndSendTransaction` callback function
     callback: Function,
+}
+
+impl Default for SignTransaction {
+    fn default() -> Self {
+        Self {
+            version: SemverVersion::default(),
+            legacy: false,
+            version_zero: false,
+            callback: JsValue::undefined().unchecked_into(),
+        }
+    }
 }
 
 impl SignTransaction {
@@ -113,6 +124,41 @@ impl SignTransaction {
 
         let success = wasm_bindgen_futures::JsFuture::from(outcome).await?;
         Reflection::new(success)?.get_bytes_from_vec("signedTransaction")
+    }
+
+    pub(crate) async fn call_sign_all_txs(
+        &self,
+        wallet_account: &WalletAccount,
+        transactions: &[&[u8]],
+        cluster: Option<Cluster>,
+    ) -> WalletResult<Vec<Vec<u8>>> {
+        let inputs = js_sys::Array::new();
+
+        for tx_bytes in transactions {
+            let tx_bytes_value: js_sys::Uint8Array = (*tx_bytes).into();
+            let mut tx_object = Reflection::new_object();
+            tx_object.set_object(&"account".into(), &wallet_account.js_value)?;
+            tx_object.set_object(&"transaction".into(), &tx_bytes_value)?;
+            if let Some(ref cluster) = cluster {
+                tx_object.set_object(&"chain".into(), &cluster.chain().into())?;
+            }
+            inputs.push(&tx_object.take());
+        }
+
+        let outcome = self.callback.apply(&JsValue::null(), &inputs)?;
+        let outcome = js_sys::Promise::resolve(&outcome);
+        let success = wasm_bindgen_futures::JsFuture::from(outcome).await?;
+
+        let results = js_sys::Array::from(&success);
+        let mut signed: Vec<Vec<u8>> = vec![];
+
+        for i in 0..results.length() {
+            let item = results.get(i);
+            let bytes = Reflection::new(item)?.get_bytes_from_vec("signedTransaction")?;
+            signed.extend(bytes);
+        }
+
+        Ok(signed)
     }
 
     pub(crate) async fn call_sign_and_send_transaction(

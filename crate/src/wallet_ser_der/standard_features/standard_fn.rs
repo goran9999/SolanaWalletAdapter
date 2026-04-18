@@ -1,16 +1,28 @@
 use core::hash::Hash;
 
-use web_sys::js_sys::Function;
+use web_sys::{
+    js_sys::Function,
+    wasm_bindgen::{JsCast, JsValue},
+};
 
 use crate::{Reflection, SemverVersion, WalletError, WalletResult};
 
 /// A struct containing the [semver version](SemverVersion)
 /// and [callback function](Function) within the `standard:` namespace as
 /// defined by the wallet standard
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StandardFunction {
     pub(crate) version: SemverVersion,
     pub(crate) callback: Function,
+}
+
+impl Default for StandardFunction {
+    fn default() -> Self {
+        Self {
+            version: SemverVersion::default(),
+            callback: JsValue::undefined().unchecked_into(),
+        }
+    }
 }
 
 impl StandardFunction {
