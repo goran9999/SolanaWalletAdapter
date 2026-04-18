@@ -149,12 +149,17 @@ impl SignTransaction {
         let outcome = js_sys::Promise::resolve(&outcome);
         let success = wasm_bindgen_futures::JsFuture::from(outcome).await?;
 
-        let results = js_sys::Array::from(&success);
         let mut signed: Vec<Vec<u8>> = vec![];
 
-        for i in 0..results.length() {
-            let item = results.get(i);
-            let bytes = Reflection::new(item)?.get_bytes_from_vec("signedTransaction")?;
+        if js_sys::Array::is_array(&success) {
+            let results = js_sys::Array::from(&success);
+            for i in 0..results.length() {
+                let item = results.get(i);
+                let bytes = Reflection::new(item)?.get_bytes_from_vec("signedTransaction")?;
+                signed.extend(bytes);
+            }
+        } else {
+            let bytes = Reflection::new(success)?.get_bytes_from_vec("signedTransaction")?;
             signed.extend(bytes);
         }
 
