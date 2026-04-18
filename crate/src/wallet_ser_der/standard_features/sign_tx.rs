@@ -151,16 +151,21 @@ impl SignTransaction {
 
         let mut signed: Vec<Vec<u8>> = vec![];
 
+        let extract_signed_tx = |obj: &JsValue| -> WalletResult<Vec<u8>> {
+            let signed_tx = js_sys::Reflect::get(obj, &"signedTransaction".into())
+                .map_err(|_| WalletError::ExpectedValueNotFound("signedTransaction".to_string()))?;
+            let uint8 = js_sys::Uint8Array::new(&signed_tx);
+            Ok(uint8.to_vec())
+        };
+
         if js_sys::Array::is_array(&success) {
             let results = js_sys::Array::from(&success);
             for i in 0..results.length() {
                 let item = results.get(i);
-                let bytes = Reflection::new(item)?.get_bytes_from_vec("signedTransaction")?;
-                signed.extend(bytes);
+                signed.push(extract_signed_tx(&item)?);
             }
         } else {
-            let bytes = Reflection::new(success)?.get_bytes_from_vec("signedTransaction")?;
-            signed.extend(bytes);
+            signed.push(extract_signed_tx(&success)?);
         }
 
         Ok(signed)
